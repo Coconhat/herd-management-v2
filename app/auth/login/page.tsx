@@ -28,35 +28,19 @@ export default function Page() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    const supabase = createClient();
     setIsLoading(true);
     setError(null);
-    const normalizedEmail = email.toLowerCase().trim();
 
     try {
-      // first ask the server if this email is allowed
-      const resp = await fetch("/api/check-allowed", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: normalizedEmail }),
-      });
-      const { allowed } = await resp.json();
-
-      if (!allowed) {
-        setError("Access restricted. Please contact the farm administrator.");
-        setIsLoading(false);
-        return;
-      }
-
-      // allowed -> proceed to sign in with Supabase (client-side)
-      const supabase = createClient(); // keep your current client factory
       const { error } = await supabase.auth.signInWithPassword({
-        email: normalizedEmail,
+        email,
         password,
       });
       if (error) throw error;
       router.push("/dashboard");
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "An error occurred");
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : "An error occurred");
     } finally {
       setIsLoading(false);
     }
