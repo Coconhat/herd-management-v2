@@ -1,73 +1,85 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import Link from "next/link"
-import { ArrowLeft } from "lucide-react"
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 
 interface Cow {
-  id: string
-  tag_number: string
-  name: string | null
+  id: string;
+  tag_number: string;
+  name: string | null;
 }
 
 interface Medicine {
-  id: string
-  name: string
-  type: string
-  unit: string
-  quantity_remaining: number
+  id: string;
+  name: string;
+  type: string;
+  unit: string;
+  quantity_remaining: number;
 }
 
-export function AddTreatmentForm({ cows, medicines }: { cows: Cow[]; medicines: Medicine[] }) {
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [selectedMedicine, setSelectedMedicine] = useState<Medicine | null>(null)
-  const router = useRouter()
+export function AddTreatmentForm({
+  cows,
+  medicines,
+}: {
+  cows: Cow[];
+  medicines: Medicine[];
+}) {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedMedicine, setSelectedMedicine] = useState<Medicine | null>(
+    null
+  );
+  const router = useRouter();
 
   const handleMedicineChange = (medicineId: string) => {
-    const medicine = medicines.find((m) => m.id === medicineId)
-    setSelectedMedicine(medicine || null)
-  }
+    const medicine = medicines.find((m) => m.id === medicineId);
+    setSelectedMedicine(medicine || null);
+  };
 
-  const calculateWithdrawalEndDate = (treatmentDate: string, withdrawalDays: number) => {
-    const treatment = new Date(treatmentDate)
-    const withdrawalEnd = new Date(treatment)
-    withdrawalEnd.setDate(treatment.getDate() + withdrawalDays)
-    return withdrawalEnd.toISOString().split("T")[0]
-  }
+  const calculateWithdrawalEndDate = (
+    treatmentDate: string,
+    withdrawalDays: number
+  ) => {
+    const treatment = new Date(treatmentDate);
+    const withdrawalEnd = new Date(treatment);
+    withdrawalEnd.setDate(treatment.getDate() + withdrawalDays);
+    return withdrawalEnd.toISOString().split("T")[0];
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    setIsLoading(true)
-    setError(null)
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
 
-    const formData = new FormData(e.currentTarget)
-    const supabase = createClient()
+    const formData = new FormData(e.currentTarget);
+    const supabase = createClient();
 
     const {
       data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      setError("You must be logged in to record a treatment")
-      setIsLoading(false)
-      return
-    }
+    } = await supabase.auth.getUser();
 
     try {
-      const treatmentDate = formData.get("treatment_date") as string
-      const withdrawalDays = Number.parseInt(formData.get("withdrawal_period_days") as string) || 0
-      const dosage = Number.parseFloat(formData.get("dosage") as string)
+      const treatmentDate = formData.get("treatment_date") as string;
+      const withdrawalDays =
+        Number.parseInt(formData.get("withdrawal_period_days") as string) || 0;
+      const dosage = Number.parseFloat(formData.get("dosage") as string);
 
       const treatmentData = {
         user_id: user.id,
@@ -78,34 +90,41 @@ export function AddTreatmentForm({ cows, medicines }: { cows: Cow[]; medicines: 
         unit: formData.get("unit") as string,
         reason: formData.get("reason") as string,
         withdrawal_period_days: withdrawalDays,
-        withdrawal_end_date: withdrawalDays > 0 ? calculateWithdrawalEndDate(treatmentDate, withdrawalDays) : null,
+        withdrawal_end_date:
+          withdrawalDays > 0
+            ? calculateWithdrawalEndDate(treatmentDate, withdrawalDays)
+            : null,
         administered_by: (formData.get("administered_by") as string) || null,
         notes: (formData.get("notes") as string) || null,
-      }
+      };
 
-      const { error: treatmentError } = await supabase.from("medicine_treatments").insert(treatmentData)
-      if (treatmentError) throw treatmentError
+      const { error: treatmentError } = await supabase
+        .from("medicine_treatments")
+        .insert(treatmentData);
+      if (treatmentError) throw treatmentError;
 
       // Update medicine inventory
       if (selectedMedicine) {
-        const newQuantity = selectedMedicine.quantity_remaining - dosage
+        const newQuantity = selectedMedicine.quantity_remaining - dosage;
         const { error: inventoryError } = await supabase
           .from("medicine_inventory")
           .update({
             quantity_remaining: Math.max(0, newQuantity),
             updated_at: new Date().toISOString(),
           })
-          .eq("id", selectedMedicine.id)
-        if (inventoryError) throw inventoryError
+          .eq("id", selectedMedicine.id);
+        if (inventoryError) throw inventoryError;
       }
 
-      router.push("/dashboard/medicine")
+      router.push("/dashboard/medicine");
     } catch (error: any) {
-      setError(error.message || "An error occurred while recording the treatment")
+      setError(
+        error.message || "An error occurred while recording the treatment"
+      );
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <Card className="border-green-200 shadow-lg">
@@ -143,14 +162,19 @@ export function AddTreatmentForm({ cows, medicines }: { cows: Cow[]; medicines: 
               <Label htmlFor="medicine_id" className="text-green-700">
                 Medicine *
               </Label>
-              <Select name="medicine_id" onValueChange={handleMedicineChange} required>
+              <Select
+                name="medicine_id"
+                onValueChange={handleMedicineChange}
+                required
+              >
                 <SelectTrigger className="border-green-200 focus:border-green-400">
                   <SelectValue placeholder="Select medicine" />
                 </SelectTrigger>
                 <SelectContent>
                   {medicines.map((medicine) => (
                     <SelectItem key={medicine.id} value={medicine.id}>
-                      {medicine.name} ({medicine.quantity_remaining} {medicine.unit} available)
+                      {medicine.name} ({medicine.quantity_remaining}{" "}
+                      {medicine.unit} available)
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -216,7 +240,10 @@ export function AddTreatmentForm({ cows, medicines }: { cows: Cow[]; medicines: 
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="withdrawal_period_days" className="text-green-700">
+              <Label
+                htmlFor="withdrawal_period_days"
+                className="text-green-700"
+              >
                 Withdrawal Period (Days)
               </Label>
               <Input
@@ -254,18 +281,30 @@ export function AddTreatmentForm({ cows, medicines }: { cows: Cow[]; medicines: 
             />
           </div>
 
-          {error && <p className="text-sm text-red-600 bg-red-50 p-2 rounded">{error}</p>}
+          {error && (
+            <p className="text-sm text-red-600 bg-red-50 p-2 rounded">
+              {error}
+            </p>
+          )}
 
           <div className="flex gap-2 pt-4">
-            <Button type="submit" disabled={isLoading} className="bg-green-600 hover:bg-green-700">
+            <Button
+              type="submit"
+              disabled={isLoading}
+              className="bg-green-600 hover:bg-green-700"
+            >
               {isLoading ? "Recording Treatment..." : "Record Treatment"}
             </Button>
-            <Button asChild variant="outline" className="border-green-300 text-green-700 bg-transparent">
+            <Button
+              asChild
+              variant="outline"
+              className="border-green-300 text-green-700 bg-transparent"
+            >
               <Link href="/dashboard/medicine">Cancel</Link>
             </Button>
           </div>
         </form>
       </CardContent>
     </Card>
-  )
+  );
 }

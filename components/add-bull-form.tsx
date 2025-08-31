@@ -1,62 +1,63 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import Link from "next/link"
-import { ArrowLeft } from "lucide-react"
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 
 export function AddBullForm() {
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const router = useRouter()
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    setIsLoading(true)
-    setError(null)
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
 
-    const formData = new FormData(e.currentTarget)
-    const supabase = createClient()
+    const formData = new FormData(e.currentTarget);
+    const supabase = createClient();
 
     const {
       data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      setError("You must be logged in to add a bull")
-      setIsLoading(false)
-      return
-    }
+    } = await supabase.auth.getUser();
 
     try {
       const { error } = await supabase.from("bulls").insert({
         user_id: user.id,
         name: formData.get("name") as string,
         breed: (formData.get("breed") as string) || null,
-        registration_number: (formData.get("registration_number") as string) || null,
+        registration_number:
+          (formData.get("registration_number") as string) || null,
         date_of_birth: (formData.get("date_of_birth") as string) || null,
         status: formData.get("status") as string,
         notes: (formData.get("notes") as string) || null,
-      })
+      });
 
-      if (error) throw error
+      if (error) throw error;
 
-      router.push("/dashboard/bulls")
+      router.push("/dashboard/bulls");
     } catch (error: any) {
-      setError(error.message || "An error occurred while adding the bull")
+      setError(error.message || "An error occurred while adding the bull");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <Card className="border-green-200 shadow-lg">
@@ -152,18 +153,30 @@ export function AddBullForm() {
             />
           </div>
 
-          {error && <p className="text-sm text-red-600 bg-red-50 p-2 rounded">{error}</p>}
+          {error && (
+            <p className="text-sm text-red-600 bg-red-50 p-2 rounded">
+              {error}
+            </p>
+          )}
 
           <div className="flex gap-2 pt-4">
-            <Button type="submit" disabled={isLoading} className="bg-green-600 hover:bg-green-700">
+            <Button
+              type="submit"
+              disabled={isLoading}
+              className="bg-green-600 hover:bg-green-700"
+            >
               {isLoading ? "Adding Bull..." : "Add Bull"}
             </Button>
-            <Button asChild variant="outline" className="border-green-300 text-green-700 bg-transparent">
+            <Button
+              asChild
+              variant="outline"
+              className="border-green-300 text-green-700 bg-transparent"
+            >
               <Link href="/dashboard/bulls">Cancel</Link>
             </Button>
           </div>
         </form>
       </CardContent>
     </Card>
-  )
+  );
 }

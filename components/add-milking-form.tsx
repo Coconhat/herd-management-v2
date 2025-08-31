@@ -1,47 +1,47 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import Link from "next/link"
-import { ArrowLeft } from "lucide-react"
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 
 interface Cow {
-  id: string
-  tag_number: string
-  name: string | null
+  id: string;
+  tag_number: string;
+  name: string | null;
 }
 
 export function AddMilkingForm({ cows }: { cows: Cow[] }) {
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const router = useRouter()
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    setIsLoading(true)
-    setError(null)
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
 
-    const formData = new FormData(e.currentTarget)
-    const supabase = createClient()
+    const formData = new FormData(e.currentTarget);
+    const supabase = createClient();
 
     const {
       data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      setError("You must be logged in to record milking")
-      setIsLoading(false)
-      return
-    }
+    } = await supabase.auth.getUser();
 
     try {
       const milkingData = {
@@ -49,21 +49,27 @@ export function AddMilkingForm({ cows }: { cows: Cow[] }) {
         cow_id: formData.get("cow_id") as string,
         milking_date: formData.get("milking_date") as string,
         milking_time: formData.get("milking_time") as string,
-        milk_yield_liters: Number.parseFloat(formData.get("milk_yield_liters") as string),
+        milk_yield_liters: Number.parseFloat(
+          formData.get("milk_yield_liters") as string
+        ),
         milk_quality: formData.get("milk_quality") as string,
         notes: (formData.get("notes") as string) || null,
-      }
+      };
 
-      const { error } = await supabase.from("milking_records").insert(milkingData)
-      if (error) throw error
+      const { error } = await supabase
+        .from("milking_records")
+        .insert(milkingData);
+      if (error) throw error;
 
-      router.push("/dashboard/milking")
+      router.push("/dashboard/milking");
     } catch (error: any) {
-      setError(error.message || "An error occurred while recording the milking")
+      setError(
+        error.message || "An error occurred while recording the milking"
+      );
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <Card className="border-green-200 shadow-lg">
@@ -174,18 +180,30 @@ export function AddMilkingForm({ cows }: { cows: Cow[] }) {
             />
           </div>
 
-          {error && <p className="text-sm text-red-600 bg-red-50 p-2 rounded">{error}</p>}
+          {error && (
+            <p className="text-sm text-red-600 bg-red-50 p-2 rounded">
+              {error}
+            </p>
+          )}
 
           <div className="flex gap-2 pt-4">
-            <Button type="submit" disabled={isLoading} className="bg-green-600 hover:bg-green-700">
+            <Button
+              type="submit"
+              disabled={isLoading}
+              className="bg-green-600 hover:bg-green-700"
+            >
               {isLoading ? "Recording Milking..." : "Record Milking"}
             </Button>
-            <Button asChild variant="outline" className="border-green-300 text-green-700 bg-transparent">
+            <Button
+              asChild
+              variant="outline"
+              className="border-green-300 text-green-700 bg-transparent"
+            >
               <Link href="/dashboard/milking">Cancel</Link>
             </Button>
           </div>
         </form>
       </CardContent>
     </Card>
-  )
+  );
 }

@@ -1,53 +1,59 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import Link from "next/link"
-import { ArrowLeft } from "lucide-react"
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 
 interface Cow {
-  id: string
-  tag_number: string
-  name: string | null
+  id: string;
+  tag_number: string;
+  name: string | null;
 }
 
 interface Bull {
-  id: string
-  name: string
+  id: string;
+  name: string;
 }
 
-export function AddBreedingForm({ cows, bulls }: { cows: Cow[]; bulls: Bull[] }) {
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [breedingType, setBreedingType] = useState<string>("natural")
-  const router = useRouter()
+export function AddBreedingForm({
+  cows,
+  bulls,
+}: {
+  cows: Cow[];
+  bulls: Bull[];
+}) {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [breedingType, setBreedingType] = useState<string>("natural");
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    setIsLoading(true)
-    setError(null)
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
 
-    const formData = new FormData(e.currentTarget)
-    const supabase = createClient()
+    const formData = new FormData(e.currentTarget);
+    const supabase = createClient();
 
     const {
       data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      setError("You must be logged in to add a breeding record")
-      setIsLoading(false)
-      return
-    }
+    } = await supabase.auth.getUser();
 
     try {
       const breedingData = {
@@ -56,24 +62,35 @@ export function AddBreedingForm({ cows, bulls }: { cows: Cow[]; bulls: Bull[] })
         breeding_date: formData.get("breeding_date") as string,
         breeding_type: formData.get("breeding_type") as string,
         notes: (formData.get("notes") as string) || null,
-        bull_id: breedingType === "natural" ? (formData.get("bull_id") as string) || null : null,
+        bull_id:
+          breedingType === "natural"
+            ? (formData.get("bull_id") as string) || null
+            : null,
         semen_batch:
-          breedingType === "artificial_insemination" ? (formData.get("semen_batch") as string) || null : null,
+          breedingType === "artificial_insemination"
+            ? (formData.get("semen_batch") as string) || null
+            : null,
         technician_name:
-          breedingType === "artificial_insemination" ? (formData.get("technician_name") as string) || null : null,
-      }
+          breedingType === "artificial_insemination"
+            ? (formData.get("technician_name") as string) || null
+            : null,
+      };
 
-      const { error } = await supabase.from("breeding_records").insert(breedingData)
+      const { error } = await supabase
+        .from("breeding_records")
+        .insert(breedingData);
 
-      if (error) throw error
+      if (error) throw error;
 
-      router.push("/dashboard/breeding")
+      router.push("/dashboard/breeding");
     } catch (error: any) {
-      setError(error.message || "An error occurred while adding the breeding record")
+      setError(
+        error.message || "An error occurred while adding the breeding record"
+      );
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <Card className="border-green-200 shadow-lg">
@@ -125,13 +142,20 @@ export function AddBreedingForm({ cows, bulls }: { cows: Cow[]; bulls: Bull[] })
             <Label htmlFor="breeding_type" className="text-green-700">
               Breeding Type *
             </Label>
-            <Select name="breeding_type" value={breedingType} onValueChange={setBreedingType} required>
+            <Select
+              name="breeding_type"
+              value={breedingType}
+              onValueChange={setBreedingType}
+              required
+            >
               <SelectTrigger className="border-green-200 focus:border-green-400">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="natural">Natural Breeding</SelectItem>
-                <SelectItem value="artificial_insemination">Artificial Insemination</SelectItem>
+                <SelectItem value="artificial_insemination">
+                  Artificial Insemination
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -196,18 +220,30 @@ export function AddBreedingForm({ cows, bulls }: { cows: Cow[]; bulls: Bull[] })
             />
           </div>
 
-          {error && <p className="text-sm text-red-600 bg-red-50 p-2 rounded">{error}</p>}
+          {error && (
+            <p className="text-sm text-red-600 bg-red-50 p-2 rounded">
+              {error}
+            </p>
+          )}
 
           <div className="flex gap-2 pt-4">
-            <Button type="submit" disabled={isLoading} className="bg-green-600 hover:bg-green-700">
+            <Button
+              type="submit"
+              disabled={isLoading}
+              className="bg-green-600 hover:bg-green-700"
+            >
               {isLoading ? "Adding Record..." : "Add Breeding Record"}
             </Button>
-            <Button asChild variant="outline" className="border-green-300 text-green-700 bg-transparent">
+            <Button
+              asChild
+              variant="outline"
+              className="border-green-300 text-green-700 bg-transparent"
+            >
               <Link href="/dashboard/breeding">Cancel</Link>
             </Button>
           </div>
         </form>
       </CardContent>
     </Card>
-  )
+  );
 }
